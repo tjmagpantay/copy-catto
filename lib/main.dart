@@ -4,8 +4,11 @@ import 'pages/emoticon_page.dart';
 import 'pages/gif_page.dart';
 import 'pages/meme_page.dart';
 import 'pages/favorites_page.dart';
+import 'services/favorites_manager.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await FavoritesManager().init();
   runApp(const HersheyApp());
 }
 

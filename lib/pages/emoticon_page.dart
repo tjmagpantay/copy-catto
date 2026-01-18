@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/content_item.dart';
+import '../services/favorites_manager.dart';
+import '../data/content_data.dart';
 
 class EmoticonPage extends StatefulWidget {
   const EmoticonPage({super.key});
@@ -11,52 +13,29 @@ class EmoticonPage extends StatefulWidget {
 
 class _EmoticonPageState extends State<EmoticonPage> {
   String _searchQuery = '';
-  String? _selectedTag; // Currently selected filter tag
-  bool _showTagFilters = false; // Whether to show the tag filter section
+  String? _selectedTag;
+  bool _showTagFilters = false;
+  final FavoritesManager _favoritesManager = FavoritesManager();
+  String? _animatingHeartId;
   
-  // Default text-based emoticons (kaomoji) with searchable tags
-  final List<ContentItem> defaultEmoticons = [
-    ContentItem(id: '1', content: '(˶ᵔ ᵕ ᵔ˶)', type: ContentType.emoticon, tags: ['happy', 'smile', 'cute', 'joy']),
-    ContentItem(id: '2', content: '(っ＾▿＾)💨', type: ContentType.emoticon, tags: ['excited', 'happy', 'running']),
-    ContentItem(id: '3', content: '(╥﹏╥)', type: ContentType.emoticon, tags: ['sad', 'cry', 'tears', 'upset']),
-    ContentItem(id: '4', content: '(づ ◕‿◕ )づ', type: ContentType.emoticon, tags: ['hug', 'love', 'cute', 'happy']),
-    ContentItem(id: '5', content: '(｡•́︿•̀｡)', type: ContentType.emoticon, tags: ['sad', 'disappointed', 'upset']),
-    ContentItem(id: '6', content: '(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧', type: ContentType.emoticon, tags: ['magic', 'sparkle', 'excited', 'happy']),
-    ContentItem(id: '7', content: '(¬‿¬)', type: ContentType.emoticon, tags: ['smirk', 'mischief', 'sly']),
-    ContentItem(id: '8', content: '(⊙_⊙)', type: ContentType.emoticon, tags: ['shocked', 'surprise', 'confused']),
-    ContentItem(id: '9', content: '(◕‿◕✿)', type: ContentType.emoticon, tags: ['happy', 'cute', 'flower', 'smile']),
-    ContentItem(id: '10', content: '(ง •̀_•́)ง', type: ContentType.emoticon, tags: ['fight', 'determined', 'strong']),
-    ContentItem(id: '11', content: '(´｡• ᵕ •｡`)', type: ContentType.emoticon, tags: ['shy', 'cute', 'blush', 'happy']),
-    ContentItem(id: '12', content: '(╯°□°）╯︵ ┻━┻', type: ContentType.emoticon, tags: ['angry', 'rage', 'flip', 'table']),
-    ContentItem(id: '13', content: '┬─┬ノ( º _ ºノ)', type: ContentType.emoticon, tags: ['calm', 'fix', 'table', 'sorry']),
-    ContentItem(id: '14', content: '(｡♥‿♥｡)', type: ContentType.emoticon, tags: ['love', 'heart', 'happy', 'cute']),
-    ContentItem(id: '15', content: '(¬_¬")', type: ContentType.emoticon, tags: ['annoyed', 'skeptical', 'doubt']),
-    ContentItem(id: '16', content: '(◠‿◠✿)', type: ContentType.emoticon, tags: ['sweet', 'happy', 'cute', 'smile']),
-    ContentItem(id: '17', content: '(｡•́︿•̀｡)', type: ContentType.emoticon, tags: ['sad', 'pout', 'upset']),
-    ContentItem(id: '18', content: '(づ｡◕‿‿◕｡)づ', type: ContentType.emoticon, tags: ['hug', 'love', 'cuddle', 'cute']),
-    ContentItem(id: '19', content: '(⌐■_■)', type: ContentType.emoticon, tags: ['cool', 'sunglasses', 'swag']),
-    ContentItem(id: '20', content: '(｡･ω･｡)', type: ContentType.emoticon, tags: ['cute', 'cat', 'happy']),
-    ContentItem(id: '21', content: '(☞ﾟヮﾟ)☞', type: ContentType.emoticon, tags: ['pointing', 'cool', 'hey']),
-    ContentItem(id: '22', content: '☜(ﾟヮﾟ☜)', type: ContentType.emoticon, tags: ['pointing', 'cool', 'hey']),
-    ContentItem(id: '23', content: '(っ˘ڡ˘ς)', type: ContentType.emoticon, tags: ['yummy', 'food', 'delicious', 'hungry']),
-    ContentItem(id: '24', content: '(｡◕‿◕｡)', type: ContentType.emoticon, tags: ['happy', 'cute', 'smile', 'joy']),
-    ContentItem(id: '25', content: '(ᵔᴥᵔ)', type: ContentType.emoticon, tags: ['bear', 'cute', 'happy', 'animal']),
-    ContentItem(id: '26', content: '(￣︶￣)', type: ContentType.emoticon, tags: ['content', 'satisfied', 'happy']),
-    ContentItem(id: '27', content: '(˘▾˘~)', type: ContentType.emoticon, tags: ['sleepy', 'tired', 'relaxed']),
-    ContentItem(id: '28', content: '(╬ಠ益ಠ)', type: ContentType.emoticon, tags: ['angry', 'mad', 'rage', 'furious']),
-    ContentItem(id: '29', content: '(ノಠ益ಠ)ノ彡┻━┻', type: ContentType.emoticon, tags: ['angry', 'flip', 'table', 'rage']),
-    ContentItem(id: '30', content: '(◕ᴗ◕✿)', type: ContentType.emoticon, tags: ['happy', 'cute', 'flower', 'sweet']),
-    ContentItem(id: '31', content: '(´• ω •`)', type: ContentType.emoticon, tags: ['cute', 'happy', 'soft', 'gentle']),
-    ContentItem(id: '32', content: '(o˘◡˘o)', type: ContentType.emoticon, tags: ['happy', 'content', 'smile']),
-    ContentItem(id: '33', content: '(｡･∀･)ﾉﾞ', type: ContentType.emoticon, tags: ['wave', 'hi', 'hello', 'greeting']),
-    ContentItem(id: '34', content: '(づ￣ ³￣)づ', type: ContentType.emoticon, tags: ['kiss', 'love', 'hug', 'affection']),
-    ContentItem(id: '35', content: '(｡･ω･｡)ﾉ♡', type: ContentType.emoticon, tags: ['love', 'wave', 'heart', 'cute']),
-    ContentItem(id: '36', content: '(͡° ͜ʖ ͡°)', type: ContentType.emoticon, tags: ['lenny', 'meme', 'smirk', 'suspicious']),
-    ContentItem(id: '37', content: 'ಠ_ಠ', type: ContentType.emoticon, tags: ['disapprove', 'judgement', 'look']),
-    ContentItem(id: '38', content: '¯\\_(ツ)_/¯', type: ContentType.emoticon, tags: ['shrug', 'idk', 'whatever', 'dunno']),
-    ContentItem(id: '39', content: '(ಥ﹏ಥ)', type: ContentType.emoticon, tags: ['cry', 'sad', 'tears', 'upset']),
-    ContentItem(id: '40', content: '(´• ω •`)ﾉ', type: ContentType.emoticon, tags: ['wave', 'bye', 'hello', 'cute']),
-  ];
+  // Use shared data
+  List<ContentItem> get defaultEmoticons => ContentData.emoticons;
+
+  @override
+  void initState() {
+    super.initState();
+    _favoritesManager.addListener(_onFavoritesChanged);
+  }
+
+  @override
+  void dispose() {
+    _favoritesManager.removeListener(_onFavoritesChanged);
+    super.dispose();
+  }
+
+  void _onFavoritesChanged() {
+    if (mounted) setState(() {});
+  }
 
   // Get all unique tags from emoticons
   List<String> get allTags {
@@ -94,8 +73,37 @@ class _EmoticonPageState extends State<EmoticonPage> {
     
     // Show a quick message that it was copied
     ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Copied to clipboard'),
+        duration: Duration(milliseconds: 800),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Color(0xFF496853),
+      ),
+    );
+  }
+
+  void _handleDoubleTap(ContentItem item) async {
+    await _favoritesManager.toggleFavorite(item);
+    
+    setState(() {
+      _animatingHeartId = item.id;
+    });
+    
+    Future.delayed(const Duration(milliseconds: 1000), () {
+      if (mounted) {
+        setState(() {
+          _animatingHeartId = null;
+        });
+      }
+    });
+    
+    ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Copied $emoticon'),
+        content: Text(
+          _favoritesManager.isFavorite(item.id) 
+              ? 'Added to favorites ❤️' 
+              : 'Removed from favorites'
+        ),
         duration: const Duration(milliseconds: 800),
         behavior: SnackBarBehavior.floating,
         backgroundColor: const Color(0xFF496853),
@@ -295,24 +303,78 @@ class _EmoticonPageState extends State<EmoticonPage> {
                     itemCount: filteredEmoticons.length,
                     itemBuilder: (context, index) {
                       final item = filteredEmoticons[index];
+                      final isFavorite = _favoritesManager.isFavorite(item.id);
+                      final isAnimating = _animatingHeartId == item.id;
                       
-                      return InkWell(
+                      return GestureDetector(
                         onTap: () => _copyToClipboard(item.content),
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF262932),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Center(
-                            child: Text(
-                              item.content,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.white,
+                        onDoubleTap: () => _handleDoubleTap(item),
+                        child: Stack(
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF262932),
+                                borderRadius: BorderRadius.circular(12),
+                                border: isFavorite ? Border.all(
+                                  color: const Color(0xFF496853),
+                                  width: 2,
+                                ) : null,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  item.content,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.white,
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
+                            if (isFavorite)
+                              Positioned(
+                                top: 4,
+                                right: 4,
+                                child: Container(
+                                  padding: const EdgeInsets.all(2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black54,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: const Icon(
+                                    Icons.favorite,
+                                    color: Color(0xFF496853),
+                                    size: 10,
+                                  ),
+                                ),
+                              ),
+                            if (isAnimating)
+                              Center(
+                                child: TweenAnimationBuilder<double>(
+                                  tween: Tween(begin: 0.0, end: 1.0),
+                                  duration: const Duration(milliseconds: 600),
+                                  curve: Curves.elasticOut,
+                                  builder: (context, value, child) {
+                                    return Transform.scale(
+                                      scale: value,
+                                      child: Opacity(
+                                        opacity: 1.0 - (value * 0.5),
+                                        child: const Icon(
+                                          Icons.favorite,
+                                          color: Color(0xFF496853),
+                                          size: 40,
+                                          shadows: [
+                                            Shadow(
+                                              blurRadius: 10,
+                                              color: Colors.black54,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                          ],
                         ),
                       );
                     },

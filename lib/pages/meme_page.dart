@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:io';
+import 'package:share_plus/share_plus.dart';
 import '../models/content_item.dart';
 import '../services/favorites_manager.dart';
 import '../data/content_data.dart';
@@ -64,16 +65,39 @@ class _MemePageState extends State<MemePage> {
   }
 
   void _copyToClipboard(String content) {
-    // For images/memes, we don't copy the path as it's not useful
-    // Instead, show a friendly message
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Double tap to favorite <3'),
-        duration: Duration(milliseconds: 800),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: Color(0xFF496853),
-      ),
-    );
+    // Directly share the image when tapped
+    _shareImage(content);
+  }
+
+  void _shareImage(String content) async {
+    try {
+      // Share the image file
+      await Share.shareXFiles(
+        [XFile(content)],
+        text: 'Check out this meme!',
+      );
+    } catch (e) {
+      // Silently handle cancellation - don't show error if user just closes share sheet
+      final errorMsg = e.toString().toLowerCase();
+      if (errorMsg.contains('cancelled') || 
+          errorMsg.contains('did not call back') ||
+          errorMsg.contains('user cancelled')) {
+        // User cancelled, do nothing
+        return;
+      }
+      
+      // Only show error for actual failures
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Unable to share this image'),
+            duration: Duration(milliseconds: 1500),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    }
   }
 
   void _handleDoubleTap(ContentItem item) async {
@@ -299,6 +323,7 @@ class _MemePageState extends State<MemePage> {
                       return GestureDetector(
                         onTap: () => _copyToClipboard(item.content),
                         onDoubleTap: () => _handleDoubleTap(item),
+                        onLongPress: () => _shareImage(item.content),
                         child: Stack(
                           children: [
                             Container(

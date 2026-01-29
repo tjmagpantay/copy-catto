@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:io';
+import 'package:share_plus/share_plus.dart';
 import '../models/content_item.dart';
 import '../services/favorites_manager.dart';
 import '../data/content_data.dart';
@@ -55,18 +56,39 @@ class _FavoritesPageState extends State<FavoritesPage> {
 
   void _handleTap(ContentItem item) {
     if (item.type == ContentType.emoticon) {
-      // Only copy emoticons
+      // Copy emoticons as text
       _copyToClipboard(item.content);
     } else {
-      // For GIFs/memes, show a friendly message
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Double tap to remove from favorites'),
-          duration: Duration(milliseconds: 800),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: Color(0xFF496853),
-        ),
+      // Share images directly
+      _shareImage(item.content);
+    }
+  }
+
+  void _shareImage(String content) async {
+    try {
+      await Share.shareXFiles(
+        [XFile(content)],
+        text: 'Check this out!',
       );
+    } catch (e) {
+      // Silently handle cancellation
+      final errorMsg = e.toString().toLowerCase();
+      if (errorMsg.contains('cancelled') || 
+          errorMsg.contains('did not call back') ||
+          errorMsg.contains('user cancelled')) {
+        return;
+      }
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Unable to share this image'),
+            duration: Duration(milliseconds: 1500),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
     }
   }
 
@@ -223,6 +245,18 @@ class _FavoritesPageState extends State<FavoritesPage> {
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
+                                  if (item.type != ContentType.emoticon)
+                                    ListTile(
+                                      leading: const Icon(Icons.share, color: Color(0xFF496853)),
+                                      title: const Text(
+                                        'Share',
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                      onTap: () {
+                                        Navigator.pop(context);
+                                        _shareImage(item.content);
+                                      },
+                                    ),
                                   ListTile(
                                     leading: const Icon(Icons.delete, color: Colors.red),
                                     title: const Text(

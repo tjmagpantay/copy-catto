@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:io';
 import '../models/content_item.dart';
 import '../services/favorites_manager.dart';
 import '../data/content_data.dart';
@@ -50,6 +51,23 @@ class _FavoritesPageState extends State<FavoritesPage> {
         backgroundColor: Color(0xFF496853),
       ),
     );
+  }
+
+  void _handleTap(ContentItem item) {
+    if (item.type == ContentType.emoticon) {
+      // Only copy emoticons
+      _copyToClipboard(item.content);
+    } else {
+      // For GIFs/memes, show a friendly message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Double tap to remove from favorites'),
+          duration: Duration(milliseconds: 800),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Color(0xFF496853),
+        ),
+      );
+    }
   }
 
   void _removeFavorite(ContentItem item) async {
@@ -194,7 +212,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                       final isAnimating = _animatingHeartId == item.id;
                       
                       return GestureDetector(
-                        onTap: () => _copyToClipboard(item.content),
+                        onTap: () => _handleTap(item),
                         onDoubleTap: () => _handleDoubleTap(item),
                         onLongPress: () {
                           showModalBottomSheet(
@@ -244,17 +262,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                                     )
                                   : ClipRRect(
                                       borderRadius: BorderRadius.circular(12),
-                                      child: Image.asset(
-                                        item.content,
-                                        fit: BoxFit.cover,
-                                        width: double.infinity,
-                                        height: double.infinity,
-                                        errorBuilder: (context, error, stackTrace) {
-                                          return const Center(
-                                            child: Icon(Icons.image, color: Colors.white54),
-                                          );
-                                        },
-                                      ),
+                                      child: _buildImageWidget(item.content),
                                     ),
                             ),
                             Positioned(
@@ -309,5 +317,36 @@ class _FavoritesPageState extends State<FavoritesPage> {
         ),
       ],
     );
+  }
+
+  Widget _buildImageWidget(String path) {
+    // Check if it's a file path (user added) or asset path (default)
+    if (path.startsWith('/') || path.contains(':\\')) {
+      // It's a file path
+      return Image.file(
+        File(path),
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        errorBuilder: (context, error, stackTrace) {
+          return const Center(
+            child: Icon(Icons.image, color: Colors.white54),
+          );
+        },
+      );
+    } else {
+      // It's an asset path
+      return Image.asset(
+        path,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        errorBuilder: (context, error, stackTrace) {
+          return const Center(
+            child: Icon(Icons.image, color: Colors.white54),
+          );
+        },
+      );
+    }
   }
 }

@@ -101,7 +101,7 @@ class _EmoticonPageState extends State<EmoticonPage> {
       SnackBar(
         content: Text(
           _favoritesManager.isFavorite(item.id) 
-              ? 'Added to favorites ❤️' 
+              ? 'Added to favorites <3' 
               : 'Removed from favorites'
         ),
         duration: const Duration(milliseconds: 800),

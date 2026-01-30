@@ -510,7 +510,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         elevation: 0,
         centerTitle: true,
         title: Image.asset(
-          'images/top-logo.png', 
+          'images/copy-catto-logo.png', 
           height: 60,
         ),
       ),

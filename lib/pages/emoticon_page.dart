@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 import '../models/content_item.dart';
 import '../services/favorites_manager.dart';
 import '../data/content_data.dart';
@@ -67,18 +68,12 @@ class _EmoticonPageState extends State<EmoticonPage> {
     return results;
   }
 
-  // Copy emoticon to clipboard when tapped
+  // Share emoticon when tapped
   void _copyToClipboard(String emoticon) {
-    Clipboard.setData(ClipboardData(text: emoticon));
-    
-    // Show a quick message that it was copied
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Copied to clipboard'),
-        duration: Duration(milliseconds: 800),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: Color(0xFF496853),
-      ),
+    // Use share instead of clipboard
+    Share.share(
+      emoticon,
+      subject: 'Check out this emoticon!',
     );
   }
 

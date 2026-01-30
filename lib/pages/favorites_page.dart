@@ -41,23 +41,13 @@ class _FavoritesPageState extends State<FavoritesPage> {
         .toList();
   }
 
-  void _copyToClipboard(String content) {
-    Clipboard.setData(ClipboardData(text: content));
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Copied to clipboard'),
-        duration: Duration(milliseconds: 800),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: Color(0xFF496853),
-      ),
-    );
-  }
-
   void _handleTap(ContentItem item) {
     if (item.type == ContentType.emoticon) {
-      // Copy emoticons as text
-      _copyToClipboard(item.content);
+      // Share emoticons as text
+      Share.share(
+        item.content,
+        subject: 'Check out this emoticon!',
+      );
     } else {
       // Share images directly
       _shareImage(item.content);
